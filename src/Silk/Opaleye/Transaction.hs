@@ -38,6 +38,8 @@ import Database.PostgreSQL.Simple (ConnectInfo (..), Connection)
 import System.Log.Logger
 import qualified Database.PostgreSQL.Simple as PG
 
+import Silk.Opaleye.Config
+
 class (Functor m, Applicative m, Monad m) => Transaction m where
   liftQ :: Q a -> m a
 
@@ -71,16 +73,25 @@ unsafeIOToTransaction = liftQ . unsafeIOToQ
 unsafeIOToQ :: IO a -> Q a
 unsafeIOToQ = Q . liftIO
 
-runTransaction' :: Q a -> Pool Connection -> IO a
-runTransaction' q p = runT q p (withRetry 1)
+
+runTransaction' :: forall c a . Config c -> Q a -> IO a
+runTransaction' cfg q = do
+  c <- beforeTransaction cfg
+  res <- withRetry c 1
+    $ withResource (connectionPool cfg)
+    $ \conn -> PG.withTransaction conn . flip runReaderT conn . unQ $ q
+  afterTransaction cfg c
+  return res
   where
-    withRetry n act = act `catchRecoverableExceptions` handler n act
-    handler n act (SomeException e) =
-      if n < maxDbTries
-        then do warningM "Db" ("Exception during database action, retrying: " ++ show e)
-                withRetry (n + 1) act
+    withRetry :: c -> Int -> IO a -> IO a
+    withRetry c n act = act `catchRecoverableExceptions` handler c n act
+    handler :: c -> Int -> IO a -> SomeException -> IO a
+    handler c n act (SomeException e) =
+      if n < maxTries cfg
+        then do
+          warningM "Db" $ "Warning: Exception during database action, retrying: " ++ show e
+          withRetry c (n + 1) act
         else throwIO e
-    maxDbTries = 3 :: Int
     catchRecoverableExceptions :: IO a -> (SomeException -> IO a) -> IO a
     catchRecoverableExceptions action h = action `catches`
       [ Handler $ \(e :: AsyncException)            -> throwIO e
@@ -89,12 +100,6 @@ runTransaction' q p = runT q p (withRetry 1)
       , Handler $ \(e :: Deadlock)                  -> throwIO e
       , Handler $ \(e :: SomeException)             -> h e
       ]
-    runT :: Q a -> Pool Connection -> (IO a -> IO a) -> IO a
-    runT t pc catchExc = usePool pc $ \conn
-      -> catchExc
-       . PG.withTransaction conn
-       . flip runReaderT conn
-       . unQ $ t
 
 class (Functor m, Applicative m, Monad m) => MonadPool m where
   runTransaction :: Q a -> m a
@@ -102,8 +107,8 @@ class (Functor m, Applicative m, Monad m) => MonadPool m where
 instance MonadPool m => MonadPool (ReaderT r m) where
   runTransaction = lift . runTransaction
 
-instance MonadPool (ReaderT (Pool Connection) IO) where
-  runTransaction t = ask >>= lift . runTransaction' t
+instance MonadPool (ReaderT (Config a) IO) where
+  runTransaction t = ask >>= lift . (`runTransaction'` t)
 
 instance (MonadPool m, Error e) => MonadPool (ErrorT e m) where
   runTransaction = lift . runTransaction

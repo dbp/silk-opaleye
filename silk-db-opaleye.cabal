@@ -16,6 +16,7 @@ library
   hs-source-dirs:    src
   exposed-modules:
     Silk.Opaleye
+    Silk.Opaleye.Config
     Silk.Opaleye.Json
     Silk.Opaleye.Range
     Silk.Opaleye.Run
@@ -26,7 +27,6 @@ library
     Silk.Opaleye.TH.Util
     Silk.Opaleye.Transaction
     Silk.Opaleye.TypeFams
-  other-modules:
   build-depends:
       base >= 4.6 && < 4.9
     , aeson-utils >= 0.2 && < 0.4
