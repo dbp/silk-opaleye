@@ -244,17 +244,6 @@ inE hs w = ors . map (w .==) $ hs
 notIn :: ShowConstant a => [Column a] -> Column a -> Column Bool
 notIn hs w = ands . map (./= w) $ hs
 
-data DateSlice
-  = Before UTCTime
-  | After UTCTime
-  deriving (Eq, Show)
-
-dateSlice :: (a -> Column UTCTime) -> Maybe DateSlice -> QueryArr a a
-dateSlice dateCol mslice = case mslice of
-  Nothing -> where_ (const $ constant True)
-  Just (Before tb) -> where_ (\e -> dateCol e .< constant tb)
-  Just (After  ta) -> where_ (\e -> dateCol e .> constant ta)
-
 -- | Specialized to use in aggregations, just using 'Data.List.sum' may make the type ambiguous.
 sumInt64 :: [Int64] -> Int64
 sumInt64 = L.sum
@@ -335,3 +324,32 @@ uuidText = T.pack . UUID.toString
 isNull :: Column (Nullable a) -> Column Bool
 isNull = fromPGBool . C.isNull
 
+-- DateSlice
+
+type DateSlice = (Maybe After, Maybe Before)
+
+emptyDateSlice :: DateSlice
+emptyDateSlice = (Nothing, Nothing)
+
+dateSlice :: (a -> Column UTCTime) -> DateSlice -> QueryArr a a
+dateSlice dateCol (a,b) = mbefore dateCol b . mafter dateCol a
+
+
+newtype After = After { unAfter :: UTCTime }
+  deriving (Eq, Show)
+
+mafter ::  (a -> Column UTCTime) -> Maybe After -> QueryArr a a
+mafter dateCol = maybe id (after dateCol)
+
+after :: (a -> Column UTCTime) -> After -> QueryArr a a
+after dateCol (After t) = where_ (\e -> dateCol e .> constant t)
+
+
+newtype Before = Before { unBefore :: UTCTime }
+  deriving (Eq, Show)
+
+mbefore :: (a -> Column UTCTime) -> Maybe Before -> QueryArr a a
+mbefore dateCol = maybe id (before dateCol)
+
+before :: (a -> Column UTCTime) -> Before -> QueryArr a a
+before dateCol (Before t) = where_ (\e -> dateCol e .< constant t)
