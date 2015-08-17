@@ -13,7 +13,7 @@ cabal-version:       >=1.10
 
 source-repository head
   type:              git
-  location:          https://github.com/silkapp/rest.git
+  location:          https://github.com/silkapp/silk-opaleye.git
 
 executable example
   default-language:  Haskell2010
