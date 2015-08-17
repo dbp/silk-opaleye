@@ -1,5 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-module Silk.Opaleye.TH.Column
+module Girella.TH.Column
   ( -- * TH end points
     mkId
   , makeColumnInstances
@@ -30,9 +30,9 @@ import Language.Haskell.TH
 import Opaleye.Column (Column, Nullable)
 import Opaleye.RunQuery (fieldQueryRunnerColumn)
 
-import Silk.Opaleye.Compat (QueryRunnerColumnDefault (..), classP_, equalP_, unsafeCoerceColumn)
-import Silk.Opaleye.ShowConstant (ShowConstant (..))
-import Silk.Opaleye.TH.Util (ty)
+import Girella.Compat (QueryRunnerColumnDefault (..), classP_, equalP_, unsafeCoerceColumn)
+import Girella.ShowConstant (ShowConstant (..))
+import Girella.TH.Util (ty)
 
 
 -- | Given a @newtype@ declaration with no type parameters and a single

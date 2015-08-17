@@ -2,7 +2,7 @@
     FlexibleContexts
   , TypeFamilies
   #-}
-module Silk.Opaleye.Aggregation
+module Girella.Aggregation
   ( sum_
   , count
   , avg
@@ -27,8 +27,8 @@ import Opaleye.Column (Column)
 import Opaleye.PGTypes (PGBool)
 import qualified Opaleye.Aggregate as A (avg, boolAnd, boolOr, count, groupBy, max, min, sum)
 
-import Silk.Opaleye.Compat (PGOrd)
-import Silk.Opaleye.ShowConstant (PGRep, safeCoerceFromRep, safeCoerceToRep)
+import Girella.Compat (PGOrd)
+import Girella.ShowConstant (PGRep, safeCoerceFromRep, safeCoerceToRep)
 
 groupBy_ :: Aggregator (Column a) (Column a)
 groupBy_ = A.groupBy

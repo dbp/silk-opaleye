@@ -5,7 +5,7 @@
   , ScopedTypeVariables
   , TypeFamilies
   #-}
-module Silk.Opaleye.ShowConstant
+module Girella.ShowConstant
   ( ShowConstant (..)
   , safeCoerceToRep
   , safeCoerceFromRep
@@ -22,7 +22,7 @@ import Opaleye.Column (Column)
 import Opaleye.PGTypes
 import Opaleye.RunQuery (QueryRunnerColumn, queryRunnerColumn)
 
-import Silk.Opaleye.Compat (QueryRunnerColumnDefault (..), unsafeCoerceColumn)
+import Girella.Compat (QueryRunnerColumnDefault (..), unsafeCoerceColumn)
 
 class ShowConstant a where
   type PGRep a :: *
